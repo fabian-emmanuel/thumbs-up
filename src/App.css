@@ -30,5 +30,23 @@
   padding: 8px;
   border: 0;
   border-radius: 5px;
+}
 
+.thumbsUpCount{
+  background-color: gray;
+  margin-top: 16px;
+  padding: 8px;
+}
+
+.field {
+  width: 100%;
+  height: 56px;
+  border-radius: 4px;
+  position: relative;
+  background-color: rgba(255,255,255,0.3);
+  transition: 0.3s all;
+}
+.field:hover {
+  background-color: rgba(255, 255, 255, 0.45);
+  box-shadow: 0 4px 20px 0 rgba(0, 0, 0, 0.05);
 }
