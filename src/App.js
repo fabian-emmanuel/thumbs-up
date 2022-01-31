@@ -5,12 +5,8 @@ import abi from "./utils/ThumbsUpPortal.json";
 import Loader from "./components/Loader.jsx";
 
 const App = () => {
-
-  /*
-  * Just a state variable we use to store our user's public wallet.
-  */
   const [currentAccount, setCurrentAccount] = useState("");
-  const contractAddress = "0x4Adb7eA26e1284c623d15A9dae25ae1A3d62f19e";
+  const contractAddress = "0x1B4B7cB9F92ae48B5A91E25F69434F5F0026D16f";
   const contractABI = abi.abi;
   const [isLoading, setIsLoading] = useState(false);
   const [allThumbsUps, setAllThumbsUps] = useState([]);
@@ -22,39 +18,68 @@ const App = () => {
 
 
   const getAllThumbsUps = async () => {
+    const { ethereum } = window;
     try {
-      const {ethereum} = window;
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum);
         const signer = provider.getSigner();
         const thumbsUpPortalContract = new ethers.Contract(contractAddress, contractABI, signer);
-
         const thumbsUps = await thumbsUpPortalContract.getAllThumbsUps();
 
-        /*
-         * We only need address, timestamp, and message in our UI so let's
-         * pick those out
-         */
-        let thumbsUpCleaned = [];
-        thumbsUps.forEach(thumbsUp => {
-          thumbsUpCleaned.push({
+
+        const thumbsUpCleaned = thumbsUps.map(thumbsUp => {
+          return {
             address: thumbsUp.thumbsUper,
             timestamp: new Date(thumbsUp.timestamp * 1000),
-            message: thumbsUp.message
-          });
+            message: thumbsUp.message,
+          }
         });
+
         /*
          * Store our data in React State
          */
         setAllThumbsUps(thumbsUpCleaned);
       } else {
-        console.log()
+        console.log("Ethereum object doesn't exist!")
       }
 
     } catch (error) {
       console.log(error)
     }
   }
+
+  /**
+   * Listen in for emitter events!
+   */
+  useEffect(() => {
+    let thumbsUpPortalContract;
+
+    const onNewThumbsUp = (from, timestamp, message) => {
+      console.log("NewThumbsUp", from, timestamp, message);
+      setAllThumbsUps(prevState => [
+         ...prevState,
+        {
+          address: from,
+          timestamp: new Date(timestamp * 1000),
+          message: message,
+        }
+      ]);
+    }
+
+  if(window.ethereum){
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const signer = provider.getSigner();
+
+    thumbsUpPortalContract = new ethers.Contract(contractAddress, contractABI, signer);
+    thumbsUpPortalContract.on("NewThumbsUp", onNewThumbsUp);
+  }
+
+  return () => {
+    if (thumbsUpPortalContract){
+      thumbsUpPortalContract.off("NewThumbsUp", onNewThumbsUp);
+    }
+  }
+  }, []);
 
   const checkIfWalletIsConnected = async () => {
     /*
@@ -124,7 +149,7 @@ const App = () => {
         /*
         * Execute the actual thumbsUp from your smart contract
         */
-        const thumbsUpTxn = await thumbsUpPortalContract.thumbsUp(message);
+        const thumbsUpTxn = await thumbsUpPortalContract.thumbsUp(message, { gasLimit: 300000 });
         setIsLoading(true);
         console.log("Mining...", thumbsUpTxn.hash);
 

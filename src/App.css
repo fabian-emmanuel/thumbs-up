@@ -1,3 +1,6 @@
+body {
+  background-color: blanchedalmond;
+}
 .mainContainer {
   display: flex;
   justify-content: center;
